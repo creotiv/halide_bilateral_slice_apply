@@ -266,7 +266,7 @@ class HalideBuildExtension(BuildExtension):
 generators = [
             HalideOp("bilateral_slice_apply.cpp", "bsa",
                           "bilateral_slice_apply_cuda_float32", cuda=True),
-            HalideOp("bilateral_slice_apply_grad.cpp", "bsa_grad",
+            HalideOp("bilateral_slice_apply.cpp", "bsa_grad",
                           "bilateral_slice_apply_cuda_float32_grad", cuda=True)]
 
 setuptools.setup(name='bilateral_slice_apply',

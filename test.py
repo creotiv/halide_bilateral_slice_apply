@@ -2,6 +2,7 @@ import torch
 import bilateral_slice_apply
 from ops import BilateralSliceApply
 import time
+import torch.nn.functional as F
 
 grid = torch.rand((2,2,2,1,1),dtype=torch.float32, requires_grad=True).cuda()
 guide = torch.ones((5,5,1),dtype=torch.float32, requires_grad=True).cuda()

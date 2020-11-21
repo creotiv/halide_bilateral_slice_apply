@@ -144,11 +144,11 @@ public:
                     .fuse(xy, z, xyz)
                     .fuse(c, n, cn)
                     .fuse(xyz, cn, allvars)
-                    .gpu_tile(allvars, tx, 128);
+                    .gpu_tile(allvars, tx, 1);
                 d_guide
                     .fuse(x, y, xy)
                     .fuse(xy, n, allvars)
-                    .gpu_tile(allvars, tx, 128);
+                    .gpu_tile(allvars, tx, 1);
             } else {
                 // d_grid
                 //     .compute_root()

@@ -16,24 +16,23 @@ class BilateralSliceApplyFunction(torch.autograd.Function):
         out = image.new()
         out.resize_(image.shape)
         ops.bilateral_slice_apply_cuda_float32(grid, guide, image, out)
-        variables = [grid, guide, image]
-        ctx.save_for_backward(*variables)
+        ctx.save_for_backward(grid, guide, image)
 
         return out
 
     @staticmethod
     def backward(ctx, grad_output):
-        grid, guide, image = ctx.saved_variables
-        print('GRAD',grad_output)
-        print('CTX', ctx)
-        out = image.new()
-        out.resize_(image.shape)
+        grid = ctx.saved_tensors[0]
+        guide = ctx.saved_tensors[1]
+        image = ctx.saved_tensors[2]
         d_grid = grid.new()
         d_grid.resize_(grid.shape)
         d_guide = guide.new()
         d_guide.resize_(guide.shape)
-        ops.bilateral_slice_apply_cuda_float32_grad(grid, guide, image, grad_output, d_grid, d_guide)
-        
+
+        print('===', grad_output.shape)
+        ops.bilateral_slice_apply_cuda_float32_grad(grid, guide, image, grad_output.contiguous(), d_grid, d_guide)
+        print('@')
         return d_grid, d_guide
 
 
