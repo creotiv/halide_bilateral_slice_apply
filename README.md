@@ -1,3 +1,8 @@
+Install libs:
+```
+sudo apt-get install libtinfo-dev 
+```
+
 Download Halide lib and extract: 
 ```
 wget https://github.com/halide/Halide/releases/download/v10.0.0/Halide-10.0.0-x86-64-linux-db901f7f7084025abc3cbb9d17b0f2d3f1745900.tar.gz
