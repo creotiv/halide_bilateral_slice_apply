@@ -86,17 +86,88 @@ public:
                     .fuse(xy, cn, allvars)
                     .gpu_tile(allvars, tx, 1);
             } else {
-                output
-                    .compute_root()
-                    .fuse(c, n, cn)
-                    .fuse(y, cn, allvars)
-                    .parallel(allvars, 8)
-                    .vectorize(x, 8);
+                // output
+                //     .compute_root()
+                //     .fuse(c, n, cn)
+                //     .fuse(y, cn, allvars)
+                //     .parallel(allvars, 8)
+                //     .vectorize(x, 8);
             }
         }
 
    }
 };
+
+class BilateralSliceApplyGradGenerator : public Halide::Generator<BilateralSliceApplyGradGenerator> {
+public:
+
+    Input<Buffer<float>> grid{"grid", 5};  
+    Input<Buffer<float>> guide{"guide", 3};  
+    Input<Buffer<float>> input{"input", 4};  
+
+    Input<Buffer<float>> d_output{"d_output", 4};  
+
+    Output<Buffer<float>> d_grid{"d_grid", 5};  
+    Output<Buffer<float>> d_guide{"d_guide", 3};  
+
+    void generate() {
+        // Algorithm
+        Func f_output = bilateral_slice_apply(grid, guide, input);
+
+        // NOTE: the output_bounds argument is technically supposed to
+        // be the shape of f_output; we'll use the bounds of input_a since it
+        // is equivalent and easier to access.
+        Derivative d = propagate_adjoints(f_output, d_output,
+                                          {{0, input.dim(0).extent()},
+                                           {0, input.dim(1).extent()},
+                                           {0, input.dim(2).extent()},
+                                           {0, input.dim(3).extent()}});
+
+        d_grid(x, y, z, c, n) = d(grid)(x, y, z, c, n);
+        d_guide(x, y, n) = d(guide)(x, y, n);
+
+        const int kEdge = 1024;
+        grid.set_estimates({{0, kEdge}, {0, kEdge}, {0, kEdge}, {0, 64}, {0, 64}});
+        guide.set_estimates({{0, kEdge}, {0, kEdge}, {0, 1}});
+        input.set_estimates({{0, kEdge}, {0, kEdge}, {0, 3}, {0, 10}});
+        d_output.set_estimates({{0, kEdge}, {0, kEdge}, {0, 3}, {0, 10}});
+        d_guide.set_estimates({{0, kEdge}, {0, kEdge}, {0, 1}});
+        d_grid.set_estimates({{0, kEdge}, {0, kEdge}, {0, kEdge}, {0, 64}, {0, 64}});
+
+          // Schedule
+        if (!auto_schedule) {
+            Var tx("tx"), xy("xy"), xyz("xyz"), cn("cn"), allvars("allvars");
+
+            if (get_target().has_gpu_feature()) {
+                d_grid
+                    .fuse(x, y, xy)
+                    .fuse(xy, z, xyz)
+                    .fuse(c, n, cn)
+                    .fuse(xyz, cn, allvars)
+                    .gpu_tile(allvars, tx, 128);
+                d_guide
+                    .fuse(x, y, xy)
+                    .fuse(xy, n, allvars)
+                    .gpu_tile(allvars, tx, 128);
+            } else {
+                // d_grid
+                //     .compute_root()
+                //     .fuse(c, n, cn)
+                //     .fuse(y, cn, allvars)
+                //     .parallel(allvars, 8)
+                //     .vectorize(x, 8);
+                // d_guide
+                //     .compute_root()
+                //     .fuse(c, n, cn)
+                //     .fuse(y, cn, allvars)
+                //     .parallel(allvars, 8)
+                //     .vectorize(x, 8);
+            }
+        }
+    }
+};
+
 }
 
-HALIDE_REGISTER_GENERATOR(creotiv::BilateralSliceApplyGenerator, bsa_gen);
+HALIDE_REGISTER_GENERATOR(creotiv::BilateralSliceApplyGenerator, bsa);
+HALIDE_REGISTER_GENERATOR(creotiv::BilateralSliceApplyGradGenerator, bsa_grad)
