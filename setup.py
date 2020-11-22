@@ -109,7 +109,7 @@ class HalidePyTorchExtension(setuptools.Extension):
 
     def _get_gen_cxxflags(self, flags, hl_distrib):
         if flags is None:
-            flags =["-O3", "-std=c++11",
+            flags =["-O3", "-std=c++14",
                     "-I", os.path.join(hl_distrib, "include"),
                     "-I", os.path.join(hl_distrib, "tools"),
                     "-Wall", "-Werror", "-Wno-unused-function", 

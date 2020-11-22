@@ -29,11 +29,12 @@ class BilateralSliceApplyFunction(torch.autograd.Function):
         d_grid.resize_(grid.shape)
         d_guide = guide.new()
         d_guide.resize_(guide.shape)
+        d_image = image.new()
+        d_image.resize_(image.shape)
 
-        print('===', grad_output.shape)
-        ops.bilateral_slice_apply_cuda_float32_grad(grid, guide, image, grad_output.contiguous(), d_grid, d_guide)
-        print('@')
-        return d_grid, d_guide
+        grad_output = grad_output.clone()
+        ops.bilateral_slice_apply_cuda_float32_grad(grid, guide, image, grad_output, d_grid, d_guide)
+        return d_grid, d_guide, None
 
 
 class BilateralSliceApply(torch.nn.Module):
