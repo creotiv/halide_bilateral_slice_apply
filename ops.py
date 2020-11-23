@@ -29,8 +29,6 @@ class BilateralSliceApplyFunction(torch.autograd.Function):
         d_grid.resize_(grid.shape)
         d_guide = guide.new()
         d_guide.resize_(guide.shape)
-        d_image = image.new()
-        d_image.resize_(image.shape)
 
         grad_output = grad_output.clone()
         ops.bilateral_slice_apply_cuda_float32_grad(grid, guide, image, grad_output, d_grid, d_guide)

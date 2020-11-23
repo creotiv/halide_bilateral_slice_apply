@@ -95,15 +95,28 @@ public:
 
         // Schedule
         if (!auto_schedule) {
-            Var tx("tx"), xy("xy"), cn("cn"), xyc("xyc"), xycn("xycn"), xi("xi"),yi("yi"),zi("zi");
+            Var tx("tx"), xy("xy"), xyc("xyc"), xycn("xycn");
             if (get_target().has_gpu_feature()) {
                 output
+                    // .fuse(x, y, xy)
+                    // .fuse(xy, c, xyc)
+                    // .fuse(xyc, n, xycn)
+                    // .gpu_tile(xycn, tx, 64);
+
+                    .gpu_threads(x,y)
                     .fuse(x, y, xy)
                     .fuse(xy, c, xyc)
                     .fuse(xyc, n, xycn)
-                    .gpu_tile(xycn, tx, 4);
+                    .gpu_tile(xycn, tx, 64)
+                    .compile_jit(target);
 
-
+        //  Func(l["abs_selection"])
+        //     .compute_root()
+        //     .reorder(k, x, y, n)
+        //     .fuse(x, y, xy)
+        //     .fuse(xy, n, xyn)
+        //     .gpu_tile(xyn, xi, ts)
+        //     ;
             } else {
                 // output
                 //     .compute_root()
@@ -127,6 +140,7 @@ public:
 
     Output<Buffer<float>> d_grid{"d_grid", 5};  
     Output<Buffer<float>> d_guide{"d_guide", 3};  
+    // Output<Buffer<float>> d_input{"d_input", 4};  
 
     void generate() {
         // Algorithm
@@ -150,7 +164,7 @@ public:
           // Schedule
         if (!auto_schedule) {
             Target target = get_target();
-            Var tx("tx"), ty("ty"),tz("tz"), cn("cn"), xy("xy"), xyn("xyn"), xyc("xyc"), xycn("xycn"),xyz("xyz"), xyzc("xyzc"), xyzcn("xyzcn");
+            Var tx("tx"), ty("ty"),tz("tz"), xy("xy"), xyn("xyn"), xyc("xyc"), xycn("xycn"),xyz("xyz"), xyzc("xyzc"), xyzcn("xyzcn");
             f_output.compute_root();
             if (target.has_gpu_feature()) {
                 Derivative d = propagate_adjoints(f_output, d_output,
@@ -161,18 +175,28 @@ public:
 
                 d_grid(x, y, z, c, n) = d(grid)(x, y, z, c, n);
                 d_guide(x, y, n) = d(guide)(x, y, n);
+                // d_input(x, y, c, n) = d(input)(x, y, c, n);
 
                 d_grid
+                    // .gpu_threads(x,y,z)
                     .fuse(x, y, xy)
                     .fuse(xy, z, xyz)
                     .fuse(xyz, c, xyzc)
                     .fuse(xyzc, n, xyzcn)
-                    .gpu_tile(xyzcn, tx, 4);
-
+                    .gpu_tile(xyzcn, tx, 64);
+                    // .gpu_tile(x,y,z,tx,ty,tz,4,4,4)
+                    // .compile_jit(target);
                 d_guide
+                    // .gpu_threads(x,y)
                     .fuse(x, y, xy)
                     .fuse(xy, n, xyn)
-                    .gpu_tile(xyn, tx, 4);
+                    .gpu_tile(xyn, tx, 64);
+                    // .compile_jit(target);
+                // d_input
+                //     .fuse(x, y, xy)
+                //     .fuse(xy, c, xyc)
+                //     .fuse(xyc, n, xycn)
+                //     .gpu_tile(xycn, tx, 1);
                 
             } else {
                 // d_grid

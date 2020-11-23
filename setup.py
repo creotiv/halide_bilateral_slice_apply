@@ -238,7 +238,7 @@ class HalideBuildExtension(BuildExtension):
                         op_cuda = gen.cuda
                         target = "target=host"
                         if op_cuda:
-                            target += "-cuda-cuda_capability_61-user_context"
+                            target += "-cuda-cuda_capability_75-user_context"
                         # TODO: add linux version
                         env["DYLD_LIBRARY_PATH"] = "../Halide/bin"
                         cmd2 =  [generator_bin, "-g", gen.name, "-f",
